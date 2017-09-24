@@ -34,7 +34,7 @@ RUN make install
 
 # clone and install the project
 WORKDIR /root/
-RUN git clone https://github.com/murraybutler/CIS3999.git
+RUN git clone https://github.com/murraybutler/RESTServ.git
 WORKDIR /root/CIS3999
 RUN make all
 ENV LD_LIBRARY_PATH /root/CIS3999/lib/
