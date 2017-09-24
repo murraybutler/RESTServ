@@ -35,14 +35,7 @@ RUN make install
 # clone and install the project
 WORKDIR /root/
 RUN git clone https://github.com/murraybutler/RESTServ.git
-WORKDIR /root/CIS3999
+WORKDIR /root/RESTServ
 RUN make all
-ENV LD_LIBRARY_PATH /root/CIS3999/lib/
+ENV LD_LIBRARY_PATH /root/RESTServ/lib/
 
-# Create a user & folder for subsequent Pistache.io projects.
-#RUN adduser -S pistache
-#WORKDIR /home/pistache
-#RUN chown pistache:users /home/pistache
-
-# Switch to the user.
-#USER pistache
