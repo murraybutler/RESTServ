@@ -1,14 +1,16 @@
-/* 
-   Mathieu Stefani, 07 février 2016
-   
-   Example of a REST endpoint with routing
-*/
-
 #include <algorithm>
 
 #include <pistache/http.h>
 #include <pistache/router.h>
 #include <pistache/endpoint.h>
+
+#ifdef LATER
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
+#endif
+
 #include "include/BloomFilter.h"
 
 using namespace std;
@@ -52,7 +54,9 @@ private:
 
         Routes::Post(router, "/test", Routes::bind(&DedupEndpoint::doFiltTestAdd, this));
         Routes::Get(router, "/dump", Routes::bind(&DedupEndpoint::doFiltDump, this));
-
+#ifdef LATER
+        Routes::Get(router, "/dbdump", Routes::bind(&DedupEndpoint::doDbDump, this));
+#endif
     }
 
     void doFiltTestAdd(const Rest::Request& request, Http::ResponseWriter response) {
@@ -61,13 +65,16 @@ private:
 
 	ret = bf->TestAndAdd(elem);
         if (ret) {
-	    reply = "String Exists\n";
+	        reply = "String Exists\n";
         } else {
-	    reply = "String Added\n";
-	}
-        response.send(Http::Code::Created, reply);
-
-	    
+	        reply = "String Added\n";
+#ifdef LATER
+            // MongoDB insert for strings
+            document << elem;
+            collection.insert_one(document.view());
+#endif
+	    }
+        response.send(Http::Code::Created, reply );
     }
 
     void doFiltDump(const Rest::Request& request, Http::ResponseWriter response) {
@@ -75,19 +82,32 @@ private:
 
     }
 
-    class LocalFilt {
-    public:
-	BloomFilter& getBloomFilter()
-	{
-	    static BloomFilter bf;
-	    return bf;
-	}
-    };
+#ifdef LATER
+    // This is the MongoDB access code that would dump the database collection
+    // Inactive now, unless there is a container run to house an instance.
+    void doDbDump(const Rest::Request& request, Http::ResponseWriter response) {
+        auto cursor = collection.find({});
+        string dumper = "";
+        for (auto&& doc : cursor) {
+            dumper += bsoncxx::to_json(doc);
+        }   
+        response.send(Http::Code::Ok,dumper);
+    }
+#endif
 
     std::shared_ptr<Http::Endpoint> httpEndpoint;
     Rest::Router router;
     BloomFilter *bf = new BloomFilter();
 
+#ifdef LATER
+    // MongoDB vars for the class
+    mongocxx::instance moninst{};
+    mongocxx::uri uri("mongodb://<name of MongoDB container>:27017");
+    mongocxx::client conn{uri};
+
+    bsoncxx::builder::stream::document document{};
+    auto cursor = collection.find({});
+#endif
 };
 
 int main(int argc, char *argv[]) {
